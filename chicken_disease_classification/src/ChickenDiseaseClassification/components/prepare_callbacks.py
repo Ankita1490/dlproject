@@ -2,7 +2,7 @@ import os
 import tensorflow as tf
 import time
 
-from ChickenDiseaseClassification.config import PrepareCallbacksConfig
+from ChickenDiseaseClassification.config.configuration import PrepareCallbacksConfig
 
 class PrepareCallback:
     def __init__(self, config:PrepareCallbacksConfig):
@@ -17,6 +17,7 @@ class PrepareCallback:
             
         )
         return tf.keras.callbacks.TensorBoard(log_dir= tb_running_log_dir)
+    
     @property
     def create_ckpt_callbacks(self):
         return tf.keras.callbacks.ModelCheckpoint(

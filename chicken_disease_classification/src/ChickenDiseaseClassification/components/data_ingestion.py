@@ -25,7 +25,9 @@ class DataIngestion:
     def extract_zip_file(self):
         """Extract zip file into the data directory"""
         unzip_path = self.data_ingestion_config.unzip_dir
-        if not os.path.exists(self.data_ingestion_config.unzip_dir):
+        path =os.path.exists(self.data_ingestion_config.local_data_file)
+        print(path)
+        if os.path.exists(self.data_ingestion_config.local_data_file):
             os.makedirs(unzip_path, exist_ok=True)
             with zipfile.ZipFile(self.data_ingestion_config.local_data_file, 'r') as zip_ref:
 

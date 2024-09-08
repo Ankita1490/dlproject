@@ -2,19 +2,24 @@ import os
 from pathlib import Path
 from ChickenDiseaseClassification.constants import *
 from ChickenDiseaseClassification.utils.common import read_yaml, create_directories
-from ChickenDiseaseClassification.entity.config_entity import DataIngestionConfig, PrepareBaseModelConfig, PrepareCallbacksConfig
+from ChickenDiseaseClassification.entity.config_entity import (DataIngestionConfig, 
+                                                               PrepareBaseModelConfig, 
+                                                               PrepareCallbacksConfig, 
+                                                               TrainingConfig,
+                                                               EvaluationConfig)
 
 class ConfigurationManager:
     def __init__(self, config_file_path= CONFIG_FILE_PATH,
                 param_file_path = PARAMS_FILE_PATH):
-        self.config = read_yaml(config_file_path)
+        self.configs = read_yaml(config_file_path)
         self.param = read_yaml(param_file_path)
-        self.is_exists =os.path.exists(self.config.artifact_root)
+        self.is_exists =os.path.exists(self.configs.artifact_root)
+        print(self.is_exists)
         if not self.is_exists:
-            create_directories([self.config.artifact_root])
+            create_directories([self.configs.artifact_root])
         
     def get_data_ingestion_config(self) -> DataIngestionConfig:
-        config = self.config.data_ingestion
+        config = self.configs.data_ingestion
         is_exists = os.path.exists(config.root_dir)
         if not is_exists:
             create_directories([config.root_dir])
@@ -29,7 +34,7 @@ class ConfigurationManager:
         return data_ingestion_config
     
     def get_prepare_base_model_config(self) -> PrepareBaseModelConfig:
-        config = self.config.prepare_base_model
+        config = self.configs.prepare_base_model
         is_exists = os.path.exists(config.root_dir)
         if not is_exists:
             create_directories([config.root_dir])
@@ -50,8 +55,9 @@ class ConfigurationManager:
     
     def get_prepare_callback_config(self) -> PrepareCallbacksConfig:
         config = self.configs.prepare_callbacks
+        model_ckpt_dir = os.path.dirname(config.checkpoint_model_filepath)
         create_directories([
-            Path(config.checkpoint_model_filepath), 
+            Path(model_ckpt_dir), 
             Path(config.tensorboard_root_log_dir)
         ])
             
@@ -62,3 +68,39 @@ class ConfigurationManager:
             
         )
         return prepare_callback_config
+    
+    
+    def get_training_config(self) -> TrainingConfig:
+        training = self.configs.training
+        prepare_base_model = self.configs.prepare_base_model
+        params = self.param
+        training_data = os.path.join(self.configs.data_ingestion.unzip_dir, "poultry_diseases")
+        create_directories([
+            Path(training.root_dir)])
+        training_config = TrainingConfig(
+            root_dir=Path(training.root_dir),
+            trained_model_path = Path(training.trained_model_path),
+            updated_base_model_path = Path(prepare_base_model.updated_base_model_path),
+            training_data=Path(training_data),
+            params_epochs = params.EPOCHS,
+            params_batch_size = params.BATCH_SIZE,
+            params_is_augmentation = params.AUGMENTATION,
+            params_image_size = params.IMAGE_SIZE,
+            params_learning_rate = params.LEARNING_RATE
+        )
+        
+        return training_config
+    
+    
+    def get_validation_config(self) -> EvaluationConfig:
+        eval_config = EvaluationConfig(
+            path_of_model="artifacts/training/model.keras",
+            training_data= "artifacts/data_ingestion/poultry_diseases",
+            all_params = self.param,
+            params_image_size= self.param.IMAGE_SIZE,
+            params_batch_size= self.param.BATCH_SIZE
+        )
+        
+        return eval_config
+        
+    
